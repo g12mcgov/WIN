@@ -52,8 +52,8 @@ class WIN:
 		self.COOKIE = {}
 
 	def setupDriver(self):
-		driver = webdriver.PhantomJS()
-		#driver = webdriver.Firefox()
+		#driver = webdriver.PhantomJS()
+		driver = webdriver.Firefox()
 
 		#driver.set_window_size(2000, 2000)
 
@@ -186,12 +186,39 @@ class WIN:
 		print "\nPlease choose a name:\n"
 		selection = raw_input('> ')
 
-		for res in results:
-			if res["ID"] == selection:
+		keys = [key['ID'] for key in results]
+		values = [value['Name'] for value in results]
 
-			else:
-				raise Exception("Not a valid selection")
-				break
+		if selection in keys:
+			# Click on the appropriate name, and begin digest
+			for res in results:
+				if selection == res['ID']:
+
+					try:
+						current_name = self.WAIT.until(EC.presence_of_element_located((By.XPATH, "//*[contains(text(), " + "'" + str(res['Name']) + "')]")))
+						current_name.click()
+
+						# Extract HTML from current page
+						current_source = self.getHTML(self.driver.page_source)
+
+						profileDict = self.extractProfileData(current_source)
+
+						return profileDict
+
+					except NoSuchElementException as err:
+						raise err
+
+					break
+
+				else:
+					pass
+
+		else:
+			raise Exception("Not a valid selection")
+
+
+		# If all else fails, return an empty dict 
+		return {}
 
 
 	def shutDown(self):
@@ -205,14 +232,52 @@ class WIN:
 		return soup
 
 
+	def extractProfileData(self, HTML):
+		profileData = [res.getText().rstrip() for res in HTML.findAll('table')[3].findAll('td')]
+
+		profileDict = {}
+
+
+		i = 0
+		while (i != len(profileData)-1):
+
+			if profileData[i] == "Name":
+				profileDict["Name"] = str(profileData[i+1])
+
+			elif profileData[i] == "Email":
+				profileDict["Email"] = str(profileData[i+1])
+
+			elif profileData[i] == "Classification":
+				profileDict["Classification"] = str(profileData[i+1])
+
+			elif profileData[i] == "Major":
+				profileDict["Major"] = str(profileData[i+1])
+
+			elif profileData[i] == "Home Address":
+			 	profileDict["Home Address"] = profileData[i+1].encode('utf-8')
+
+			elif profileData[i] == "Home Phone":
+				profileDict["Home Phone"] = str(profileData[i+1])
+
+			elif profileData[i] == "WFU Associations":
+				profileDict["WFU Associations"] = str(profileData[i+1])
+
+			i += 1
+
+		return profileDict
+
+
+
 if __name__ == "__main__":
 	username = "mcgoga12"
-	password = "ga120206"
+	password = "blah"
 	
 	win = WIN(username, password)
 
 	win.login()
-	win.internal_directory(first_name="christina", last_name="", association="student")
+	student = win.internal_directory(first_name="christina", last_name="", association="student")
+
+	print student
 
 
 	win.shutDown()
