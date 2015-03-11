@@ -15,22 +15,22 @@ import time
 import redis
 import urllib2
 import logging
-from selenium import webdriver
+from PIL import Image
 from bs4 import BeautifulSoup
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC 
-from PIL import Image
 
 sys.path.append('loggings')
 sys.path.append('helpers')
 
 ## Local Includes ##
 from db import RedisConnect
-from loggings.loggerConfig import configLogger
 from helpers.helper import cache
+from loggings.loggerConfig import configLogger
 
 
 class WIN:
@@ -52,6 +52,7 @@ class WIN:
 
 		# A Mappings of services to their respective URL
 		self.SERVICE_PATHS = {
+			"virtual_campus": "https://win.wfu.edu/win/app.wincore.WINServlet?click=1315"
 			"detailed_schedule": self.SERVICE_URL + "1325",
 			"change_term": self.SERVICE_URL + "1743",
 			"register_with_CRN": self.SERVICE_URL + "1317",
@@ -67,7 +68,8 @@ class WIN:
 		self.login_xpath = "/html/body/table[2]/tbody/tr/td/table[1]/tbody/tr/td[1]/form/table/tbody/tr/td/table/tbody/tr[4]/td[2]/input"
 		self.student_radio_button_xpath = '//*[@id="dirform"]/table[2]/tbody/tr[2]/td/table/tbody/tr[3]/td[2]/input'
 		self.faculty_radio_button_xpath = '//*[@id="dirform"]/table[2]/tbody/tr[2]/td/table/tbody/tr[4]/td[2]/input'
-		self.term_change_submit_button = '/html/body/div[3]/form/input'
+		self.term_change_submit_button = '/html/body/div[3]/form/input[2]'
+		self.change_term_link = '/html/body/table[1]/tbody/tr[2]/td/ul[2]/li/a'
 
 		# COOKIE
 		self.COOKIE = {}
@@ -121,7 +123,6 @@ class WIN:
 
 	 
 	def handle_term_selection(self, **kwargs):
-		print self.SERVICE_PATHS['change_term']
 		""" CHANGES THE CURRENT TERM IN WIN """
 
 		if len(kwargs) > 1:
@@ -137,14 +138,24 @@ class WIN:
 		# Request 'Change Term' page
 		#https://ssb.win.wfu.edu/BANPROD/twbkwbis.p_WINBridge?p_proc_name_in=bwskflib.P_SelDefTerm
 		#https://ssb.win.wfu.edu/BANPROD/bwskflib.P_SelDefTerm
-		self.driver.get(self.SERVICE_PATHS['detailed_schedule'])
+		#self.driver.get(self.SERVICE_PATHS['detailed_schedule'])
+		
+		# This is a very hacky way of getting to the 'Change Term page.'
+		# For some reason, WFU WIN won't allow you to directory go to the term 
+		# page even with a static URL (even adding cookies too). As a workaround,
+		# we first go to the Virtual Campus page and select the link, then go to
+		# the site. 
+		# TODO: Fix this. (or optimize it)
+		self.driver.get(self.SERVICE_PATHS["virtual_campus"])
+			
+		try:
+			change_term = self.WAIT.until(EC.presence_of_element_located((By.XPATH, self.change_term_link)))
+			change_term.click()
 
-		cookie = self.driver.get_cookies()
-		self.driver.add_cookie(cookie)
+		except NoSuchElementException as err:
+			raise err
 
 		try:
-			print self.getHTML(self.driver.page_source)
-
 			dropdown_selection = self.WAIT.until(EC.presence_of_element_located((By.NAME, "term_in")))
 			submit_button = self.WAIT.until(EC.presence_of_element_located((By.XPATH, self.term_change_submit_button)))
 			# Use Selenium Select() method to handle dropdown option list
@@ -154,20 +165,10 @@ class WIN:
 
 			submit_button.click()
 
+			self.logger.info("Successfully changed term.")
+
 		except NoSuchElementException as err:
 			raise err
-
-		# try:
-		# 	# Send username / password
-		# 	username_box.send_keys(self.USERNAME)
-		# 	password_box.send_keys(self.PASSWORD)
-
-		# 	# Click "Log in" button
-		# 	login_button.click()
-
-		# except AttributeError as err:
-		# 	raise err
-
 
 	# Actual methods
 	def current_schedule(self, term):
@@ -297,6 +298,7 @@ class WIN:
 			last_name = ""
 			first_name = ""
 		
+
 		# Make request to web directory search page
 		self.driver.get(self.SERVICE_PATHS['internal_directory'])
 
@@ -319,7 +321,7 @@ class WIN:
 				faculty_radio_button.click()
 
 			else:
-				raise Exception("\nType must be either 'faculty' or 'student'")
+				raise Exception("\nAssociation must be either 'faculty' or 'student'")
 
 			search_button.click()
 
@@ -440,8 +442,10 @@ class WIN:
 
 		return profileDict
 
-		
+
 	def getPicture(self, profileDict):
+		""" DOWNLOADS PICTURE ASSOCIATED WITH USER PROFILE """
+
 		picture_FileName = profileDict['Name']+".png" 
 		self.driver.save_screenshot(picture_FileName)
 		im = Image.open(picture_FileName)
