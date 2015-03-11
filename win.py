@@ -205,15 +205,7 @@ class WIN:
 						profileDict = self.extractProfileData(current_source)
 						
 						#Picture
-						picture_FileName = profileDict['Name']+".png" 
-						self.driver.save_screenshot(picture_FileName) 
-						im = Image.open(picture_FileName)
-						w, h = im.size
-						leftw = int(w*0.66)
-						righw = int(w*0.747803163)
-						lefth = int(h*0.462837838)
-						righth = int(h*0.668918919)
-						im.crop((leftw, lefth, righw , righth)).save(picture_FileName)
+						self.getpicture(profileDict)
 
 						return profileDict
 
@@ -277,8 +269,17 @@ class WIN:
 			i += 1
 
 		return profileDict
-
-
+		
+	def getpicture(self, profileDict):
+		picture_FileName = profileDict['Name']+".png" 
+		self.driver.save_screenshot(picture_FileName)
+		im = Image.open(picture_FileName)
+		w, h = im.size
+		leftw = int(w*0.66)
+		righw = int(w*0.747803163)
+		lefth = int(h*0.462837838)
+		righth = int(h*0.668918919)
+		im.crop((leftw, lefth, righw , righth)).save(picture_FileName)
 
 if __name__ == "__main__":
 	username = "mcgoga12"
