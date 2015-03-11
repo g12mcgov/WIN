@@ -18,6 +18,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC 
+from PIL import Image
 
 class WIN:
 	def __init__(self, username, password):
@@ -202,6 +203,17 @@ class WIN:
 						current_source = self.getHTML(self.driver.page_source)
 
 						profileDict = self.extractProfileData(current_source)
+						
+						#Picture
+						picture_FileName = profileDict['Name']+".png" 
+						self.driver.save_screenshot(picture_FileName) 
+						im = Image.open(picture_FileName)
+						w, h = im.size
+						leftw = int(w*0.66)
+						righw = int(w*0.747803163)
+						lefth = int(h*0.462837838)
+						righth = int(h*0.668918919)
+						im.crop((leftw, lefth, righw , righth)).save(picture_FileName)
 
 						return profileDict
 
