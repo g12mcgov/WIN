@@ -10,20 +10,39 @@
 #
 
 import re
+import sys
 import time
+import redis
 import urllib2
+import logging
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC 
+
+sys.path.append('loggings')
+sys.path.append('helpers')
+
+## Local Includes ##
+from db import RedisConnect
+from loggings.loggerConfig import configLogger
+from helpers.helper import cache
+
 
 class WIN:
 	def __init__(self, username, password):
 		# Credentials
 		self.USERNAME = username
 		self.PASSWORD = password
+
+		# Establish Redis Connection
+		self.db = RedisConnect(host="localhost", port=6379, db=0)
+
+		# Setup Logging
+		self.logger = configLogger("win")
 
 		# URL Paths
 		self.LOGIN_URL = "https://win.wfu.edu/"
@@ -47,6 +66,7 @@ class WIN:
 		self.login_xpath = "/html/body/table[2]/tbody/tr/td/table[1]/tbody/tr/td[1]/form/table/tbody/tr/td/table/tbody/tr[4]/td[2]/input"
 		self.student_radio_button_xpath = '//*[@id="dirform"]/table[2]/tbody/tr[2]/td/table/tbody/tr[3]/td[2]/input'
 		self.faculty_radio_button_xpath = '//*[@id="dirform"]/table[2]/tbody/tr[2]/td/table/tbody/tr[4]/td[2]/input'
+		self.term_change_submit_button = '/html/body/div[3]/form/input'
 
 		# COOKIE
 		self.COOKIE = {}
@@ -62,13 +82,15 @@ class WIN:
 
 	def login(self):
 		# Make a request to the login page
-		print "Hitting login url..."
-		print self.LOGIN_URL
+		self.logger.info("Requesting: " + self.LOGIN_URL)
 
+		# Request login page
 		self.driver.get(self.LOGIN_URL)
 
 		# Find elements
 		try:
+			print 
+
 			username_box = self.WAIT.until(EC.presence_of_element_located((By.NAME, "username")))
 			password_box = self.WAIT.until(EC.presence_of_element_located((By.NAME, "password")))
 			login_button = self.WAIT.until(EC.presence_of_element_located((By.XPATH, self.login_xpath)))
@@ -89,22 +111,62 @@ class WIN:
 
 
 		# Store the Cookie to persist through the rest of the app
-		cookie = self.driver.get_cookies()[0]
+		cookies = self.driver.get_cookies()
 
-		# self.driver.add_cookie({
-		# 	"domain": cookie["domain"],
-		# 	"name": cookie["name"],
-		# 	"value": cookie["value"],
-		# 	"path": cookie["path"],
-		# 	"httponly": cookie["httponly"],
-		# 	"secure": cookie["secure"]
-		# 	})		
+		for cookie in cookies:
+			self.driver.add_cookie(cookie)
+
+		self.logger.info("Successfully logged in.")
+
+	 
+	def handle_term_selection(self, **kwargs):
+		print self.SERVICE_PATHS['change_term']
+		""" CHANGES THE CURRENT TERM IN WIN """
+
+		if len(kwargs) > 1:
+			raise Exception("\nhandler_term_selection() takes one term.\n i.e."+
+				"\n\n >> handle_term_selection(term='Spring 2015')"
+				)
+
+		self.logger.info("Requesting: " + self.SERVICE_PATHS["change_term"])
+
+		# Extract term from kwargs
+		term = kwargs["term"]
 		
+		# Request 'Change Term' page
+		#https://ssb.win.wfu.edu/BANPROD/twbkwbis.p_WINBridge?p_proc_name_in=bwskflib.P_SelDefTerm
+		#https://ssb.win.wfu.edu/BANPROD/bwskflib.P_SelDefTerm
+		self.driver.get(self.SERVICE_PATHS['detailed_schedule'])
+
+		cookie = self.driver.get_cookies()
 		self.driver.add_cookie(cookie)
 
-	# Helper Methods 
-	def handle_term_selection(self):
-		pass
+		try:
+			print self.getHTML(self.driver.page_source)
+
+			dropdown_selection = self.WAIT.until(EC.presence_of_element_located((By.NAME, "term_in")))
+			submit_button = self.WAIT.until(EC.presence_of_element_located((By.XPATH, self.term_change_submit_button)))
+			# Use Selenium Select() method to handle dropdown option list
+			select = Select(dropdown_selection)
+
+			select.select_by_visible_text(term)
+
+			submit_button.click()
+
+		except NoSuchElementException as err:
+			raise err
+
+		# try:
+		# 	# Send username / password
+		# 	username_box.send_keys(self.USERNAME)
+		# 	password_box.send_keys(self.PASSWORD)
+
+		# 	# Click "Log in" button
+		# 	login_button.click()
+
+		# except AttributeError as err:
+		# 	raise err
+
 
 	# Actual methods
 	def current_schedule(self, term):
@@ -120,30 +182,120 @@ class WIN:
 		except AttributeError as err:
 			raise err
 
+	#@cache
 	def internal_directory(self, **kwargs):
-		""" SEARCHES INTERNAL DIRECTORY """
+		""" SEARCHES INTERNAL DIRECTORY FOR A USER"""
 
-		if len(kwargs) > 3:
+		selection = ""
+
+		if len(kwargs) > 4:
 			raise Exception(
 				"\nToo many arguments: method takes first_name & last_name i.e.:\n"+
-				"\n>> internal_directory(first_name='bob', last_name='jones', type='student')"
+				"\n>> internal_directory(first_name='bob', last_name='jones', association='student')"
 				)
 		elif len(kwargs) <= 1:
 			raise Exception(
-				"\nToo few arguments: method must have either first_name or last_name and associationi.e.:\n"+
+				"\nToo few arguments: method must have either first_name or last_name and association i.e.:\n"+
 				"\n>> internal_directory(first_name='bob', association='student')"
 				)
 
-		# Normalize inputs by making them all lowercase
-		if len(kwargs) == 3:
+		#
+		# If we have a first_name, last_name, association, and ID
+		#
+		if kwargs['first_name'] and kwargs['last_name'] and kwargs['association'] and kwargs['id']:
+			
+			first_name = kwargs['first_name'].lower()
+			last_name = kwargs['last_name'].lower()
+			classification = kwargs['association'].lower()
+			selection = str(kwargs['id'])
+
+			# Now we check to see if we've already made this call before.
+			# If we have, we query Redis and save ourself the scraping of
+			# the WIN website. If we haven't, we proceed, and store the new
+			# results in Redis in the event we make this call again.
+			
+			# Build our query
+			query = {
+				"firstName": first_name,
+				"lastName": last_name,
+				"association": classification,
+				"ID": selection
+			}
+
+			# Check if it exists in Redis
+			res = self.db.checkIfExists(query)
+			
+			# If it does, return the res object
+			if res:
+				return res
+			# Otherwise, proceed
+			else:
+				self.logger.info("Doesn't exist in Redis.")
+
+		#
+		# If we just have a first_name, last_name, and association:
+		#
+		elif kwargs['first_name'] and kwargs['last_name'] and kwargs['association']:
 			first_name = kwargs['first_name'].lower()
 			last_name = kwargs['last_name'].lower()
 			classification = kwargs['association'].lower()
 
-		if len(kwargs) == 2:
+		#
+		# If we have just a first_name OR last_name, id, and association
+		#
+		elif kwargs['first_name'] or kwargs['last_name'] and kwargs['id'] and kwargs['association']:
+			first_name = kwargs['first_name'].lower()
+			classification = kwargs['association'].lower()
+			selection = str(kwargs['id'])
+			last_name = ""
+
+		#
+		# If we just have a first_name and last_name
+		#
+		elif kwargs['first_name'] and kwargs['last_name']:
 			first_name = kwargs['first_name'].lower()
 			last_name = kwargs['last_name'].lower()
+			association = ""
 
+		#
+		# If we have a first_name OR last_name AND association
+		#
+		elif kwargs['first_name'] or kwargs['last_name'] and kwargs['association']:
+			first_name = kwargs['first_name'].lower()
+			last_name = kwargs['last_name'].lower()
+			classification = kwargs['association'].lower()
+
+		#
+		# If we have just have a first_name
+		#
+		elif kwargs['first_name']:
+			raise Exception(
+				"\nToo few arguments: method must have either first_name or last_name AND association i.e.:\n"+
+				"\n>> internal_directory(first_name='bob', association='student')"
+				)
+
+		#
+		# If we have just a last_name
+		#
+		elif kwargs['last_name']:
+			raise Exception(
+				"\nToo few arguments: method must have either first_name or last_name AND association i.e.:\n"+
+				"\n>> internal_directory(last_name='smith', association='student')"
+				)
+
+		#
+		# If we have just an association
+		#
+		elif kwargs['association']:
+			raise Exception(
+				"\nToo few arguments: method must have either first_name or last_name AND association i.e.:\n"+
+				"\n>> internal_directory(first_name='bob', last_name='smith', association='student')"
+				)
+
+		else:
+			last_name = ""
+			first_name = ""
+		
 		# Make request to web directory search page
 		self.driver.get(self.SERVICE_PATHS['internal_directory'])
 
@@ -183,14 +335,14 @@ class WIN:
 		for res in results:
 			print res
 
-		print "\nPlease choose a name:\n"
-		selection = raw_input('> ')
+
+		if not selection:
+			print "\nPlease choose a name:\n"
+			selection = raw_input('> ')
 
 		keys = [key['ID'] for key in results]
-		values = [value['Name'] for value in results]
 
 		if selection in keys:
-			# Click on the appropriate name, and begin digest
 			for res in results:
 				if selection == res['ID']:
 
@@ -203,16 +355,34 @@ class WIN:
 
 						profileDict = self.extractProfileData(current_source)
 
+						# Build our query to insert into Redis
+						query = {
+							"firstName": first_name,
+							"lastName": last_name,
+							"association": classification,
+							"ID": selection
+						}
+
+						# Insert into Redis
+						self.db.insert(query, profileDict)
+
+						# Return dictionary of user profile as such:
+						# {
+						# 	'Major': 'Finance', 
+						#	'Name': 'Smith, Bob Jones (Robert)', 
+						#	'Classification': 'Junior', 
+						#	'Email': 'blah@wfu.edu', 
+						#	'WFU Associations': 'Student', 
+						#	'Home Address': '4454 Burch Dr.Chevy Chase, MD\xc2\xa020815', 
+						#	'Home Phone': '(301) 694-1357'
+						# }
+
 						return profileDict
 
 					except NoSuchElementException as err:
 						raise err
 
 					break
-
-				else:
-					pass
-
 		else:
 			raise Exception("Not a valid selection")
 
@@ -222,7 +392,7 @@ class WIN:
 
 
 	def shutDown(self):
-		time.sleep(100000)
+		#time.sleep(100000)
 		self.driver.quit()
 
 
@@ -267,15 +437,16 @@ class WIN:
 		return profileDict
 
 
-
 if __name__ == "__main__":
+
 	username = "mcgoga12"
-	password = "blah"
+	password = ""
 	
 	win = WIN(username, password)
 
 	win.login()
-	student = win.internal_directory(first_name="christina", last_name="", association="student")
+	#win.internal_directory(first_name="christina", last_name="paragamian", association="student", id=1)
+	schedule = win.handle_term_selection(term="Spring 2015")
 
 	print student
 
