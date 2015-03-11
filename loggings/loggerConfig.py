@@ -1,9 +1,21 @@
 #!/usr/bin/python
+
+# Name: WIN 
+# File: WIN/loggings/loggerConfig.py
+#
+# Author(s): Grant McGovern & Gaurav Sheni
+# Date: Wed 11 March 2015 
+#
+# URL: www.github.com/g12mcgov/WIN
+#
+# ~ Description:
+#       - Defines a configLogger() method which allows a global
+#		  logger (with specific names) to be used throughout the
+#		  app.
 #
 #
-#	Sets up logger to persist app
 #
-#
+
 import sys
 import logging
 

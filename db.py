@@ -1,6 +1,15 @@
+#!/usr/bin/python
+
+# Name: WIN 
+# File: WIN/db.py
 #
+# Author(s): Grant McGovern & Gaurav Sheni
+# Date: Wed 11 March 2015 
 #
-#	Setup Redis, persist through app usage
+# URL: www.github.com/g12mcgov/WIN
+#
+# ~ Description:
+#       - Provides a class for Redis usage throughout the app.
 #
 #
 

@@ -1,10 +1,17 @@
+#!/usr/bin/python
+
+# Name: WIN 
+# File: WIN/win.py
 #
+# Author(s): Grant McGovern & Gaurav Sheni
+# Date: Wed 11 March 2015 
 #
+# URL: www.github.com/g12mcgov/WIN
 #
-#
-#	An API to WIN. Lol.
-#
-#
+# ~ Description:
+#		- This file defines the main WIN class to be used throughout the app. 
+#		  it contains all of the necessary methods to be used as standalone or
+#		  with the WIN API.
 #
 #
 #
