@@ -25,6 +25,7 @@ import logging
 from PIL import Image
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from collections import OrderedDict
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
@@ -59,7 +60,7 @@ class WIN:
 
 		# A Mappings of services to their respective URL
 		self.SERVICE_PATHS = {
-			"virtual_campus": "https://win.wfu.edu/win/app.wincore.WINServlet?click=1315"
+			"virtual_campus": "https://win.wfu.edu/win/app.wincore.WINServlet?click=1315",
 			"detailed_schedule": self.SERVICE_URL + "1325",
 			"change_term": self.SERVICE_URL + "1743",
 			"register_with_CRN": self.SERVICE_URL + "1317",
@@ -67,6 +68,7 @@ class WIN:
 		}
 
 		# Selenium Config
+		self.DRIVER_TYPE = webdriver.PhantomJS()
 		self.SELENIUM_TIMEOUT = 10
 		self.driver = self.setupDriver()
 		self.WAIT = WebDriverWait(self.driver, self.SELENIUM_TIMEOUT)
@@ -77,21 +79,19 @@ class WIN:
 		self.faculty_radio_button_xpath = '//*[@id="dirform"]/table[2]/tbody/tr[2]/td/table/tbody/tr[4]/td[2]/input'
 		self.term_change_submit_button = '/html/body/div[3]/form/input[2]'
 		self.change_term_link = '/html/body/table[1]/tbody/tr[2]/td/ul[2]/li/a'
+		self.student_detail_schedule_link = "/html/body/table[1]/tbody/tr[2]/td/ul[4]/li[7]/a"
 
 		# COOKIE
 		self.COOKIE = {}
 
 	def setupDriver(self):
-		#driver = webdriver.PhantomJS()
-		driver = webdriver.Firefox()
-
-		#driver.set_window_size(2000, 2000)
-
-		return driver
-
+		""" RETURNS A WEB DRIVER OBJECT BASED ON WHAT KIND """
+		return self.DRIVER_TYPE
 
 	def login(self):
-		# Make a request to the login page
+		""" LOGS INTO WIN, AND STORES COOKIE. MUST BE THE ENTRY POINT FOR APP """
+
+		# Log request to login page
 		self.logger.info("Requesting: " + self.LOGIN_URL)
 
 		# Request login page
@@ -99,7 +99,6 @@ class WIN:
 
 		# Find elements
 		try:
-			print 
 
 			username_box = self.WAIT.until(EC.presence_of_element_located((By.NAME, "username")))
 			password_box = self.WAIT.until(EC.presence_of_element_located((By.NAME, "password")))
@@ -123,6 +122,8 @@ class WIN:
 		# Store the Cookie to persist through the rest of the app
 		cookies = self.driver.get_cookies()
 
+		# If there's multiple cookies, store 'em all b/c I have no idea which 
+		# one is the WIN cookie.
 		for cookie in cookies:
 			self.driver.add_cookie(cookie)
 
@@ -141,11 +142,6 @@ class WIN:
 
 		# Extract term from kwargs
 		term = kwargs["term"]
-		
-		# Request 'Change Term' page
-		#https://ssb.win.wfu.edu/BANPROD/twbkwbis.p_WINBridge?p_proc_name_in=bwskflib.P_SelDefTerm
-		#https://ssb.win.wfu.edu/BANPROD/bwskflib.P_SelDefTerm
-		#self.driver.get(self.SERVICE_PATHS['detailed_schedule'])
 		
 		# This is a very hacky way of getting to the 'Change Term page.'
 		# For some reason, WFU WIN won't allow you to directory go to the term 
@@ -178,18 +174,43 @@ class WIN:
 			raise err
 
 	# Actual methods
-	def current_schedule(self, term):
+	def current_schedule(self, **kwargs):
 		""" RETRIEVES CURRENT USER SCHEDULE """
 
-		url = self.SERVICE_PATHS["detailed_schedule"]
+		# First change the term to the current one
+		if len(kwargs) > 1:
+			raise Exception("\ncurrent_schedule() takes one term.\n i.e."+
+				"\n\n >> current_selection(term='Spring 2015')"
+				)
+
+		# Extract term from kwargs
+		term = kwargs["term"]
+		
+		# Switch the current term to the requested one:
+		self.handle_term_selection(term=term)
+
+		# Log our request 
+		self.logger.info("Requesting: " + self.SERVICE_PATHS["detailed_schedule"])
+
+		# This is a very hacky way of getting to the 'Change Term page.'
+		# For some reason, WFU WIN won't allow you to directory go to the term 
+		# page even with a static URL (even adding cookies too). As a workaround,
+		# we first go to the Virtual Campus page and select the link, then go to
+		# the site. 
+		# TODO: Fix this. (or optimize it)
+		self.driver.get(self.SERVICE_PATHS["virtual_campus"])
 
 		try:
-			page = urllib2.urlopen(url)
-			soup = BeautifulSoup(page.read())
-			print page
+			detailed_schedule = self.WAIT.until(EC.presence_of_element_located((By.XPATH, self.student_detail_schedule_link)))
+			detailed_schedule.click()
 
-		except AttributeError as err:
+		except NoSuchElementException as err:
 			raise err
+
+		# Grab page HTML and send to extraScheduleData() method
+		source = self.getHTML(self.driver.page_source)
+		self.extractScheduleData(source)
+
 
 	#@cache
 	def internal_directory(self, **kwargs):
@@ -235,8 +256,7 @@ class WIN:
 			res = self.db.checkIfExists(query)
 			
 			# If it does, return the res object
-			if res:
-				return res
+			if res: return res
 			# Otherwise, proceed
 			else:
 				self.logger.info("Doesn't exist in Redis.")
@@ -306,8 +326,11 @@ class WIN:
 			first_name = ""
 		
 
+		# Log our request to the URL
+		self.logger.info("Requesting: " + self.SERVICE_PATHS["internal_directory"])
+
 		# Make request to web directory search page
-		self.driver.get(self.SERVICE_PATHS['internal_directory'])
+		self.driver.get(self.SERVICE_PATHS["internal_directory"])
 
 		try:
 			# Locate elements
@@ -330,11 +353,13 @@ class WIN:
 			else:
 				raise Exception("\nAssociation must be either 'faculty' or 'student'")
 
+			# Execute the search query by clicking the "submit" button
 			search_button.click()
 
 		except NoSuchElementException as err:
 			raise err
 
+		# Get HTML from the page
 		source = self.getHTML(self.driver.page_source)
 
 		# Table 3 is the results table
@@ -342,10 +367,13 @@ class WIN:
 
 		print "Results:\n"
 
+		# DEBUG #
 		for res in results:
 			print res
 
 
+		# TODO: Replace with this RESTful API parameter 'ID'
+		# 		i.e.: localhost/winapi/internal_directory/?first_name=bob&last_name=smith&id=2
 		if not selection:
 			print "\nPlease choose a name:\n"
 			selection = raw_input('> ')
@@ -405,7 +433,6 @@ class WIN:
 
 
 	def shutDown(self):
-		#time.sleep(100000)
 		self.driver.quit()
 
 
@@ -416,11 +443,13 @@ class WIN:
 
 
 	def extractProfileData(self, HTML):
+		""" EXTRACTS THE PROFILE DATA FROM A WIN DIRECTORY ENTRY """
+
 		profileData = [res.getText().rstrip() for res in HTML.findAll('table')[3].findAll('td')]
 
 		profileDict = {}
 
-
+		# This is nasty string parsing but all I could get to work for now. Whatever.
 		i = 0
 		while (i != len(profileData)-1):
 
@@ -450,17 +479,125 @@ class WIN:
 		return profileDict
 
 
+	def extractScheduleData(self, HTML):
+		""" EXTRACTS THE SCHEDULE FOR THE LOGGED IN WIN USER """
+		
+		# temp = HTML.findAll("table", {"class": "atadisplaytable"})
+		temp = HTML.findAll("table")[6].findAll("td")
+
+		classes = []
+
+		# This is very frusterating....
+
+		# i = 3
+		# while(True):
+		# 	temp = HTML.findALL("table")[i].findAll("td")
+
+		# 	i += 1
+
+		# # TODO: Convert to list comprehension
+		# for item in temp:
+		# 	if item not in tables:
+		# 		tables.append(item)
+
+		# classes = []
+
+		# i = 0
+		# while (i != len(tables)-1):
+		# 	print "\n\n"
+		# 	print "\n\nitem[i]:   \n", tables[i]
+		# 	print "\n\nitem[i+1]:  \n", tables[i+1]
+		# 	i += 1
+
+		# # Format and extract class meta data
+		# i = 0
+		# while (i != len(tables)-1):
+		# 	temporaryDict = {}
+
+		# 	temporaryDict["classInfo"] = tables[i].getText()
+		# 	temporaryDict["sectionInfo"] = tables[i+1].getText()
+
+		# 	classes.append(temporaryDict)
+
+		# 	i += 1
+
+		
+		# Overall list to store schedule
+		# schedule = []
+
+		# For each class in the list, extract meta data
+		# for entry in classes:
+			
+		# 	print "\n\n"
+		# 	print entry 
+
+		# 	classesDict = {}
+
+		# 	# First check sectionInfo dictionary
+		# 	i = 0
+		# 	while (i != len(entry['sectionInfo'])-1):
+
+		# 		if entry['sectionInfo'][i] == "Class":
+		# 			print entry['sectionInfo'][i]
+
+		# 			classesDict["Time"] = str(entry['sectionInfo'][i+1])
+		# 			classesDict["Days"] = str(entry['sectionInfo'][i+2])
+		# 			classesDict["Location"] = str(entry['sectionInfo'][i+3])
+		# 			classesDict["Dates"] = str(entry['sectionInfo'][i+4])
+		# 			classesDict["Style"] = str(entry['sectionInfo'][i+5])
+
+		# 		i += 1
+
+		# 	# Then check classInfo dictionary
+		# 	i = 0
+		# 	while (i != len(entry['classInfo'])-1):
+
+		# 		if entry['classInfo'][i] == "CRN":
+		# 			classesDict["CRN"] = str(entry['classInfo'][i+1])
+
+		# 		elif entry['classInfo'][i] == "Status":
+		# 			classesDict["Status"] = str(entry['classInfo'][i+1])
+
+		# 		# Note the 'i+2'
+		# 		elif entry['classInfo'][i] == "Assigned Instructor":
+		# 			classesDict["Assigned Instructor"] = str(entry['classInfo'][i+2])
+
+		# 		elif entry['classInfo'][i] == "Grade Mode":
+		# 			classesDict["Grade Mode"] = str(entry['classInfo'][i+1])
+
+		# 		elif entry['classInfo'][i] == "Credits":
+		# 		 	classesDict["Credits"] = str(entry['classInfo'][i+1]).strip()
+
+		# 		elif entry['classInfo'][i] == "Campus":
+		# 			classesDict["Campus"] = str(entry['classInfo'][i+1])
+
+		# 		i += 1
+
+		# 	schedule.append(classesDict)
+
+
+		# for item in schedule:
+		# 	print item
+		# 	print '\n'
+
+		# return schedule
+
 	def getPicture(self, profileDict):
 		""" DOWNLOADS PICTURE ASSOCIATED WITH USER PROFILE """
 
 		picture_FileName = profileDict['Name']+".png" 
+		
 		self.driver.save_screenshot(picture_FileName)
+		
 		im = Image.open(picture_FileName)
+		
 		w, h = im.size
+		
 		leftw = int(w*0.66)
 		righw = int(w*0.747803163)
 		lefth = int(h*0.462837838)
 		righth = int(h*0.668918919)
+		
 		im.crop((leftw, lefth, righw , righth)).save(picture_FileName)
 
 
@@ -472,10 +609,8 @@ if __name__ == "__main__":
 	win = WIN(username, password)
 
 	win.login()
-	#win.internal_directory(first_name="christina", last_name="paragamian", association="student", id=1)
-	schedule = win.handle_term_selection(term="Spring 2015")
-
-	print student
-
+	# student = win.internal_directory(first_name="christina", last_name="paragamian", association="student", id=1)
+	# schedule = win.handle_term_selection(term="Spring 2015")
+	schedule = win.current_schedule(term="Spring 2015")
 
 	win.shutDown()
