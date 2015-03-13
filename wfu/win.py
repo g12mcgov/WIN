@@ -368,8 +368,7 @@ class WIN:
 		# TODO: Replace with this RESTful API parameter 'ID'
 		# 		i.e.: localhost/winapi/internal_directory/?first_name=bob&last_name=smith&id=2
 		if not selection:
-			print "\nPlease choose a name:\n"
-			selection = raw_input('> ')
+			return results
 
 		keys = [key['ID'] for key in results]
 

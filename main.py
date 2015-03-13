@@ -24,7 +24,8 @@ def main():
 	win = WIN(username, password)
 
 	win.login()
-	student = win.internal_directory(first_name="christina", last_name="paragamian", association="student", id=1)
+	student = win.internal_directory(first_name="grant", last_name="mcgovern", association="student", id="1")
+	
 	print student
 	# schedule = win.handle_term_selection(term="Spring 2015")
 	# schedule = win.current_schedule(term="Fall 2013")
