@@ -14,6 +14,7 @@
 #
 #
 #
+from itertools import izip
 
 def cache(fn):
     """ Cache function calls to insert into Redis """
@@ -32,3 +33,9 @@ def cache(fn):
         return result
 
     return wrapped
+
+def pairwise(iterable):
+    "s -> (s0,s1), (s2,s3), (s4, s5), ..."
+    a = iter(iterable)
+    
+    return izip(a, a)

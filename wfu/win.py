@@ -32,12 +32,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC 
 
-sys.path.append('loggings')
-sys.path.append('helpers')
 
 ## Local Includes ##
-from db import RedisConnect
-from helpers.helper import cache
+from database.db import RedisConnect
+from helpers.helper import cache, pairwise
 from loggings.loggerConfig import configLogger
 
 
@@ -164,7 +162,9 @@ class WIN:
 			# Use Selenium Select() method to handle dropdown option list
 			select = Select(dropdown_selection)
 
-			select.select_by_visible_text(term)
+			# In the event we encounter a selection with a '(View only)' tag, handle it.
+			try: select.select_by_visible_text(term)
+			except: select.select_by_visible_text(term + ' (View only)')
 
 			submit_button.click()
 
@@ -365,13 +365,6 @@ class WIN:
 		# Table 3 is the results table
 		results = [{'ID': str(i), 'Name': res.getText() } for i, res in enumerate(source.findAll('table')[3].findAll('td'))]
 
-		print "Results:\n"
-
-		# DEBUG #
-		for res in results:
-			print res
-
-
 		# TODO: Replace with this RESTful API parameter 'ID'
 		# 		i.e.: localhost/winapi/internal_directory/?first_name=bob&last_name=smith&id=2
 		if not selection:
@@ -394,7 +387,7 @@ class WIN:
 						profileDict = self.extractProfileData(current_source)
 						
 						# Retrieve picture
-						self.getPicture(profileDict)
+						# self.getPicture(profileDict)
 
 						# Build our query to insert into Redis
 						query = {
@@ -482,105 +475,102 @@ class WIN:
 	def extractScheduleData(self, HTML):
 		""" EXTRACTS THE SCHEDULE FOR THE LOGGED IN WIN USER """
 		
-		# temp = HTML.findAll("table", {"class": "atadisplaytable"})
-		temp = HTML.findAll("table")[6].findAll("td")
+		#calculated_length = HTML.findAll("table", {"class": "atadisplaytable"})
+		calculated_length = len(HTML.findAll("table"))
+
+		# Remove duplicates while preserving order
+		tables = OrderedDict.fromkeys(HTML.findAll("table", {"class": "datadisplaytable"})).keys()
 
 		classes = []
 
-		# This is very frusterating....
+		for item1, item2 in pairwise(tables):
+			
+			temporaryDict = {}
 
-		# i = 3
-		# while(True):
-		# 	temp = HTML.findALL("table")[i].findAll("td")
+			temporaryDict["classInfo"] = item1.getText()
+			temporaryDict["sectionInfo"] = item2.getText()
 
-		# 	i += 1
-
-		# # TODO: Convert to list comprehension
-		# for item in temp:
-		# 	if item not in tables:
-		# 		tables.append(item)
-
-		# classes = []
-
-		# i = 0
-		# while (i != len(tables)-1):
-		# 	print "\n\n"
-		# 	print "\n\nitem[i]:   \n", tables[i]
-		# 	print "\n\nitem[i+1]:  \n", tables[i+1]
-		# 	i += 1
-
-		# # Format and extract class meta data
-		# i = 0
-		# while (i != len(tables)-1):
-		# 	temporaryDict = {}
-
-		# 	temporaryDict["classInfo"] = tables[i].getText()
-		# 	temporaryDict["sectionInfo"] = tables[i+1].getText()
-
-		# 	classes.append(temporaryDict)
-
-		# 	i += 1
+			classes.append(temporaryDict)
 
 		
 		# Overall list to store schedule
-		# schedule = []
+		schedule = []
 
 		# For each class in the list, extract meta data
-		# for entry in classes:
+		for entry in classes:
+
+			classesDict = {}
+
+			# Generate a list by splitting on new lines
+			splitted = entry['sectionInfo'].splitlines()
+
+			i = 0
+			# First check for 'sectionInfo' data.
+			# Iterate through the list, word by word, parsing out desired data
+			while (i != len(splitted)-1):
+
+				if splitted[i] == 'Class':
+					classesDict["Time"] = str(splitted[i+1])
+					classesDict["Days"] = str(splitted[i+2])
+					classesDict["Location"] = str(splitted[i+3])
+					classesDict["Dates"] = str(splitted[i+4])
+					classesDict["Style"] = str(splitted[i+5])
+
+				i += 1
+
+
+			# Same as above
+			splitted = entry['classInfo'].splitlines()
+
+			# Extract Course Title:
+			classesDict["Title"] = str(splitted[0])
 			
-		# 	print "\n\n"
-		# 	print entry 
+			# Then check classInfo dictionary
+			i = 0
+			while (i != len(splitted)-1):
 
-		# 	classesDict = {}
+				if splitted[i] == 'CRN:':
+					classesDict["CRN"] = str(splitted[i+1])
 
-		# 	# First check sectionInfo dictionary
-		# 	i = 0
-		# 	while (i != len(entry['sectionInfo'])-1):
+				elif splitted[i] == 'Status:':
+					classesDict["Status"] = str(splitted[i+1])
 
-		# 		if entry['sectionInfo'][i] == "Class":
-		# 			print entry['sectionInfo'][i]
+				# Note the 'i+2'
+				elif splitted[i] == 'Assigned Instructor:':
+					classesDict["Assigned Instructor"] = str(splitted[i+2])
 
-		# 			classesDict["Time"] = str(entry['sectionInfo'][i+1])
-		# 			classesDict["Days"] = str(entry['sectionInfo'][i+2])
-		# 			classesDict["Location"] = str(entry['sectionInfo'][i+3])
-		# 			classesDict["Dates"] = str(entry['sectionInfo'][i+4])
-		# 			classesDict["Style"] = str(entry['sectionInfo'][i+5])
+				elif splitted[i] == 'Grade Mode:':
+					classesDict["Grade Mode"] = str(splitted[i+1])
 
-		# 		i += 1
+				elif splitted[i] == 'Credits:':
+				 	classesDict["Credits"] = str(splitted[i+1]).strip()
 
-		# 	# Then check classInfo dictionary
-		# 	i = 0
-		# 	while (i != len(entry['classInfo'])-1):
+				elif splitted[i] == 'Campus:':
+					classesDict["Campus"] = str(splitted[i+1])
 
-		# 		if entry['classInfo'][i] == "CRN":
-		# 			classesDict["CRN"] = str(entry['classInfo'][i+1])
+				i += 1
 
-		# 		elif entry['classInfo'][i] == "Status":
-		# 			classesDict["Status"] = str(entry['classInfo'][i+1])
+			
+			schedule.append(classesDict)
 
-		# 		# Note the 'i+2'
-		# 		elif entry['classInfo'][i] == "Assigned Instructor":
-		# 			classesDict["Assigned Instructor"] = str(entry['classInfo'][i+2])
-
-		# 		elif entry['classInfo'][i] == "Grade Mode":
-		# 			classesDict["Grade Mode"] = str(entry['classInfo'][i+1])
-
-		# 		elif entry['classInfo'][i] == "Credits":
-		# 		 	classesDict["Credits"] = str(entry['classInfo'][i+1]).strip()
-
-		# 		elif entry['classInfo'][i] == "Campus":
-		# 			classesDict["Campus"] = str(entry['classInfo'][i+1])
-
-		# 		i += 1
-
-		# 	schedule.append(classesDict)
-
-
-		# for item in schedule:
-		# 	print item
-		# 	print '\n'
-
-		# return schedule
+		#
+		# Returns a dictionary object for a schedule as such:
+		# {
+		#	'Status': '**Web Registered** on Nov 05, 2014', 
+		#	'Style': 'Lecture', 
+		#	'Title': 'Linear Algebra I - MTH 121 - C', 
+		#	'Grade Mode': 'Standard Letter', 
+		#	'Dates': 'Jan 13, 2015 - May 07, 2015', 
+		#	'Days': 'MWF', 
+		#	'Credits': '4.000', 
+		#	'Location': 'Carswell Hall 101', 
+		#	'Time': '12:30 pm - 1:45 pm', 
+		#	'Assigned Instructor': 'Jason D. Gaddis', 
+		#	'CRN': '19765', 
+		#	'Campus': 'Reynolda Campus  (UG)'
+		# }
+		#
+		return schedule
 
 	def getPicture(self, profileDict):
 		""" DOWNLOADS PICTURE ASSOCIATED WITH USER PROFILE """
@@ -601,16 +591,4 @@ class WIN:
 		im.crop((leftw, lefth, righw , righth)).save(picture_FileName)
 
 
-if __name__ == "__main__":
-
-	username = "mcgoga12"
-	password = ""
-	
-	win = WIN(username, password)
-
-	win.login()
-	# student = win.internal_directory(first_name="christina", last_name="paragamian", association="student", id=1)
-	# schedule = win.handle_term_selection(term="Spring 2015")
-	schedule = win.current_schedule(term="Spring 2015")
-
-	win.shutDown()
+#if __name__ == "__main__":

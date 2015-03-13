@@ -16,7 +16,7 @@
 import sys
 import redis
 
-sys.path.append('loggings')
+sys.path.append('../loggings')
 
 ## Local Includes ##
 from loggings.loggerConfig import configLogger
