@@ -1,6 +1,6 @@
 # WIN
 
-A (soon to be) RESTful API for WFU WIN. Built ontop of Redis, scrapes WFU WIN for requested data.
+A (soon to be) RESTful API for Wake Forest University's Internal Management System, WIN. Built ontop of Redis, scrapes WFU WIN for requested data.
 
 Stay tuned. Full build and documentation/examples will be released soon.
 
