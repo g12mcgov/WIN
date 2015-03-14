@@ -28,7 +28,9 @@ Because there are no reachable URLs, this meant scraping the data from the scree
 One of the work arounds to do is using a headless browser for web automation, and in this case, [PhantomJS](http://phantomjs.org/). Moreover, to counter speed limitations, this API makes use of [Redis](http://redis.io/). Here's How:
 
 1) Make request with given parameters
+
 2) Check if this identical request exists in Redis
+
 3) If so, return that entry, otherwise, cache it for next time.
 
 Clearly, using Redis as a caching mechanism reduces latency in duplicate calls. This alleviates some of the performance bottleneck caused by the web-scraping overhead running in the background after each `REST` request.
@@ -144,8 +146,11 @@ Documentation
 Currently, the following WIN attributes are working (though not 100% stable yet):
 
 1) `Student Directory` (Including pictures!)
+
 2) `Student Schedule`
+
 3) `Term Selection`
+
 4) `Final/Midterm Grades` (In Progress)
 
 Soon, however, additional functionality will be implemented (Class Registration, Course Evaluations, etc...) and existing API endpoints will be tested robustly.
@@ -222,13 +227,17 @@ This returns a student's WIN bio from the internal directory based on a search q
 This method takes 4 parameters:
 
 1) `First Name`
+
 2) `Last Name`
+
 3) `Association`
+
 4) `ID`
 
 The `First Name` and `Last Name` are self explanatory, however, each call must require an `association`. The two options for this are:
 
 1) `student`
+
 2) `faculty`
 
 Lastly, in order to handle a search query with multiple results (for example):
