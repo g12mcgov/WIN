@@ -105,7 +105,7 @@ Now, using Node's package manager, `npm` run the following to install [PhantomJS
 You can find the latest distribution of Redis [here](https://github.com/rgl/redis/downloads).
 
 <br />
-<br />
+Now...
 <br />
 
 Before running, you must start Redis:
