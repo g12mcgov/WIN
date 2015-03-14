@@ -8,7 +8,7 @@ This is designed solely as a resource for Wake Forest Students. It is no differe
 Overview
 ======= 
 
-Inspired by the many universities who have open API's for their internal systems, I felt Wake Forest deserved one. This was largely (and initially) inspired by the Python module, [cmupy](https://github.com/ScottyLabs/cmupy), designed by Carnegie Mellon students for interacting with their Student Directory. Unfortunately, unlike Carnegie Mellon, Wake Forest did/doesn't have any RESTful API services in place for students to use. We should have access to this data because it is <b>our</b> data. Hopefully, many of you will find this as interesting and useful as I have while building it.
+Inspired by the many universities who have open API's for their internal systems, I felt Wake Forest deserved one. This was largely (and initially) inspired by the Python module, [cmupy](https://github.com/ScottyLabs/cmupy), designed by Carnegie Mellon students for interacting with their Student Directory. Unfortunately, unlike Carnegie Mellon, Wake Forest didn't/doesn't have any RESTful API services in place for students to use. We should have access to this data because it is <b>our</b> data. Hopefully, many of you will find this as interesting and useful as I have while building it.
 
 <b>Why Python?</b>
 
@@ -103,6 +103,7 @@ Now, using Node's package manager, `npm` run the following to install [PhantomJS
 <b>Windows</b>:
 
 You can find the latest distribution of Redis [here](https://github.com/rgl/redis/downloads).
+
 
 
 Before running, you must start Redis:
