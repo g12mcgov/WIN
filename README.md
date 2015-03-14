@@ -1,6 +1,6 @@
 # :tophat: WIN
 
-A `RESTful` API service for [Wake Forest University](http://www.wfu.edu/)'s Internal Management System, [WIN](https://win.wfu.edu/). This is in no way affiliated with Wake Forest University, The Bridge, or the original creators of WIN.
+A RESTful API service for [Wake Forest University](http://www.wfu.edu/)'s Internal Management System, [WIN](https://win.wfu.edu/). This is in no way affiliated with Wake Forest University, The Bridge, or the original creators of WIN.
 
 This is designed solely as a resource for Wake Forest Students. It is no different than interacting with the web interface of WIN, it's just a little smarter :wink:.
 
