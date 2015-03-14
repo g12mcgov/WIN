@@ -21,7 +21,7 @@ Design
 
 Because WFU does not provide us with an API service, this means building one from square one. I tried reverse engineering some of the WIN URLs, looking for `JSON` or `XML` responses, but to no avail. 
 
-Part of the problem is that WIN is entirely contained in an iframe. As a result, URLs are non-existent. Furthermore, after doing some research, it seems to be an old Java application layered ontop of an Oracle Database built in 2005. It could certainly use a facelift or some updating, but it gets the job done. 
+Part of the problem is that WIN is entirely contained within an iframe. As a result, URLs are non-existent. Furthermore, after doing some research, it seems to be an old Java application layered ontop of an Oracle Database built in 2005. It could certainly use a facelift or some updating, but it gets the job done. 
 
 Because there are no reachable URLs, this meant scraping the data from the screen. This meant using the [Selenium](http://www.seleniumhq.org/) browser automation tool and [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) for extracting, parsing, and working with the HTML source. However, this lends itself to a significant bottleneck of <b>speed</b>.
 
