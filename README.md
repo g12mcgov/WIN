@@ -102,7 +102,7 @@ Now, using Node's package manager, `npm` run the following to install [PhantomJS
 
 <b>Windows</b>:
 
-  You can find the latest distribution of Redis [here](https://github.com/rgl/redis/downloads).
+  `You can find the latest distribution of Redis [here](https://github.com/rgl/redis/downloads).`
 
 
 
