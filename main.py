@@ -24,10 +24,14 @@ def main():
 	win = WIN(username, password)
 
 	win.login()
-	student = win.internal_directory(first_name="grant", last_name="mcgovern", association="student", id="1")
 	
-	print student
-	# schedule = win.handle_term_selection(term="Spring 2015")
+	student = win.internal_directory(first_name="grant", last_name=None, association="student", id=None)
+	for item in student:
+		print item
+
+	# #print student
+	# schedule = win.current_schedule(term="Spring 2015")
+	# print schedule
 	# schedule = win.current_schedule(term="Fall 2013")
 
 	win.shutDown()

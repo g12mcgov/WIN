@@ -185,6 +185,21 @@ class WIN:
 
 		# Extract term from kwargs
 		term = kwargs["term"]
+
+		# Check to see if this request has been previously cached in Redis.
+		# If it has, return the entry from Redis and return.
+		#
+		# Otherwise, proceed and collect data by scraping WIN.
+		query = {"schedule": term}
+
+		response = self.db.checkIfExists(query)
+
+		# If it exists, return
+		if response: return response
+
+		else:
+			self.logger.info("Schedule for `" + term + "` does not exist in Redis.")
+
 		
 		# Switch the current term to the requested one:
 		self.handle_term_selection(term=term)
@@ -209,7 +224,16 @@ class WIN:
 
 		# Grab page HTML and send to extraScheduleData() method
 		source = self.getHTML(self.driver.page_source)
-		self.extractScheduleData(source)
+		
+		# Recieves schedule dict from extractScheduleData() method
+		schedule = self.extractScheduleData(source)
+
+		# Build query and insert into Redis
+		query = {"schedule": term}
+		self.db.insert(query, schedule)
+
+		# Return the schedule
+		return schedule
 
 
 	#@cache
@@ -253,10 +277,10 @@ class WIN:
 			}
 
 			# Check if it exists in Redis
-			res = self.db.checkIfExists(query)
+			response = self.db.checkIfExists(query)
 			
 			# If it does, return the res object
-			if res: return res
+			if response: return response
 			# Otherwise, proceed
 			else:
 				self.logger.info("Doesn't exist in Redis.")
@@ -264,7 +288,7 @@ class WIN:
 		#
 		# If we just have a first_name, last_name, and association:
 		#
-		elif kwargs['first_name'] and kwargs['last_name'] and kwargs['association']:
+		elif kwargs['first_name'] and kwargs['last_name'] and kwargs['association'] and (kwargs['id'] == None):
 			first_name = kwargs['first_name'].lower()
 			last_name = kwargs['last_name'].lower()
 			classification = kwargs['association'].lower()
@@ -272,26 +296,31 @@ class WIN:
 		#
 		# If we have just a first_name OR last_name, id, and association
 		#
-		elif kwargs['first_name'] or kwargs['last_name'] and kwargs['id'] and kwargs['association']:
+		elif kwargs['first_name'] and (kwargs['last_name'] == None or "") and kwargs['association'] and (kwargs['id'] == None):
 			first_name = kwargs['first_name'].lower()
 			classification = kwargs['association'].lower()
-			selection = str(kwargs['id'])
 			last_name = ""
 
 		#
 		# If we just have a first_name and last_name
 		#
-		elif kwargs['first_name'] and kwargs['last_name']:
+		elif kwargs['first_name'] and kwargs['last_name'] and (kwargs['association'] == None) and (kwargs['id'] == None):
 			first_name = kwargs['first_name'].lower()
 			last_name = kwargs['last_name'].lower()
 			association = ""
+
+			return {"Error": "No association type given. Please try again with either `student` or `faculty`"}
 
 		#
 		# If we have a first_name OR last_name AND association
 		#
 		elif kwargs['first_name'] or kwargs['last_name'] and kwargs['association']:
-			first_name = kwargs['first_name'].lower()
-			last_name = kwargs['last_name'].lower()
+			
+			if kwargs['first_name']:
+				first_name = kwargs['first_name'].lower()
+			elif kwargs['last_name']:
+				last_name = kwargs['last_name'].lower()
+
 			classification = kwargs['association'].lower()
 
 		#
