@@ -110,32 +110,32 @@ Configuring
 
 You must configure your WIN instance to contain your username and password. To do that, edit the following in the bottom of the `app.py` file:
 
-	```Python
-	if __name__ == "__main__":
+```Python
+if __name__ == "__main__":
 
-		# Globalizes a WIN object shared by the entire flask app
-		global win
+	# Globalizes a WIN object shared by the entire flask app
+	global win
 
-		# WIN CONFIG
-		username = "INSERT YOUR WFU USERNAME HERE (no @wfu.edu)"
-		password = "INSERT YOUR WFU PASSWORD HERE"
+	# WIN CONFIG
+	username = "INSERT YOUR WFU USERNAME HERE (no @wfu.edu)"
+	password = "INSERT YOUR WFU PASSWORD HERE"
 
-		win = WIN(username, password)
+	win = WIN(username, password)
 
-		# Attempt to login to WIN
-		try: 
-			win.login()
-			authorized = True
-		
-		except: 
-			authorized = False
-			raise Exception("Error logging into WIN.")
+	# Attempt to login to WIN
+	try: 
+		win.login()
+		authorized = True
+	
+	except: 
+		authorized = False
+		raise Exception("Error logging into WIN.")
 
-			...
-			...
-			...
+		...
+		...
+		...
 
-	```
+```
 
 A configuration `shell` script will be added shortly.
 
