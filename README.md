@@ -145,13 +145,13 @@ Documentation
 
 Currently, the following WIN attributes are working (though not 100% stable yet):
 
-1) `Student Directory` (Including pictures!)
+1) <b>Student Directory</b> (Including pictures!)
 
-2) `Student Schedule`
+2) <b>Student Schedule</b>
 
-3) `Term Selection`
+3) <b>Term Selection</b>
 
-4) `Final/Midterm Grades` (In Progress)
+4) <b>Final/Midterm Grades</b> (In Progress)
 
 Soon, however, additional functionality will be implemented (Class Registration, Course Evaluations, etc...) and existing API endpoints will be tested robustly.
 
