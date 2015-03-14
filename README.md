@@ -165,7 +165,7 @@ Checks to see if the user is logged into WIN.
 
 * **URL**
 
-  Base: /win
+  Base: `/win`
 
 * **Method:**
   
@@ -271,7 +271,7 @@ Or, you can leverage the ID:
 
 * **URL**
 
-  Base: /win/directory
+  Base: `/win/directory`
 
 * **Method:**
   
@@ -285,7 +285,7 @@ Or, you can leverage the ID:
 
    **Optional:**
  
- 	/win/directory/:firstname/:lastname/:association/:id    
+ 	`/win/directory/:firstname/:lastname/:association/:id` 
 
 * **Data Params**
 
@@ -348,7 +348,7 @@ Returns the schedule based on the inputted term for the user logged in.
 
 * **URL**
 
-  Base: /win/schedule
+  Base: `/win/schedule`
 
 * **Method:**
   
@@ -372,7 +372,7 @@ Returns the schedule based on the inputted term for the user logged in.
 
   **Optional:**
     
-    /win/schedule/:term
+    `/win/schedule/:term`
 
     If you are going to pass a term, it will contain a space (i.e.: `Fall 2012`), so you must pass it using proper URL space escaping (`%20`).
 
