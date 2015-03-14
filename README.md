@@ -113,7 +113,7 @@ Before running, you must start Redis:
 And you may need to make `app.py` an executable:
 	
 ```bash
-	$ chmod a+x app.py
+$ chmod a+x app.py
 ```
 
 
