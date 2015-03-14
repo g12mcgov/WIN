@@ -454,7 +454,7 @@ Returns the schedule based on the inputted term for the user logged in.
   
 	  ```json
 	  {
-	      {"Error": "Unable to find schedule for term `Spring 2012`"}
+	      "Error": "Unable to find schedule for term `Spring 2012`"
 	  }
 	  ``` 
 
