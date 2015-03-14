@@ -8,13 +8,13 @@ This is designed solely as a resource for Wake Forest Students. It is no differe
 Overview
 ======= 
 
-Inspired by the many universities who have open API's for their internal systems, I felt Wake Forest deserved one. This was largely (and initially) inspired by the Python module, ![cmupy](https://github.com/ScottyLabs/cmupy), designed by Carnegie Mellon students for interacting with their Student Directory. Unfortunately, unlike Carnegie Mellon, Wake Forest did/doesn't have any RESTful API services in place for students to use. We should have access to this data because it is <b>our</b> data. Hopefully, many of you will find this as interesting and useful as I have while building it.
+Inspired by the many universities who have open API's for their internal systems, I felt Wake Forest deserved one. This was largely (and initially) inspired by the Python module, [cmupy](https://github.com/ScottyLabs/cmupy), designed by Carnegie Mellon students for interacting with their Student Directory. Unfortunately, unlike Carnegie Mellon, Wake Forest did/doesn't have any RESTful API services in place for students to use. We should have access to this data because it is <b>our</b> data. Hopefully, many of you will find this as interesting and useful as I have while building it.
 
 <b>Why Python?</b>
 
-I really thought about writing this API in Java because a lot of WFU undergraduates have extensive experience with Java, however, I felt as though I could get it done faster and with more knowledge in Python. Much of the web-scraping tools like ![Selenium](http://www.seleniumhq.org/) and ![Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) I've worked with extensively, making it an ideal choice. 
+I really thought about writing this API in Java because a lot of WFU undergraduates have extensive experience with Java, however, I felt as though I could get it done faster and with more knowledge in Python. Much of the web-scraping tools like [Selenium](http://www.seleniumhq.org/) and [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) I've worked with extensively, making it an ideal choice. 
 
-Moreover, the RESTful service is served via ![Flask](http://flask.pocoo.org/), a blisteringly simple, small-footprint Python web framework. I want other students who stumble upon this to be able to fork it, contribute, and maintain it after my time at WFU. I believe writing this in Python makes the code more understandable and easier to hack at.
+Moreover, the RESTful service is served via [Flask](http://flask.pocoo.org/), a blisteringly simple, small-footprint Python web framework. I want other students who stumble upon this to be able to fork it, contribute, and maintain it after my time at WFU. I believe writing this in Python makes the code more understandable and easier to hack at.
 
 Design
 =======
@@ -23,9 +23,9 @@ Because WFU does not provide us with an API service, this means building one fro
 
 Part of the problem is that WIN is entirely contained in an iframe. As a result, URLs are non-existent. Furthermore, after doing some research, it seems to be an old Java application layered ontop of an Oracle Database built in 2005. It could certainly use a facelift or some updating, but it gets the job done. 
 
-Because there are no reachable URLs, this meant scraping the data from the screen. This meant using the ![Selenium](http://www.seleniumhq.org/) browser automation tool and ![Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) for extracting, parsing, and working with the HTML source. However, this lends itself to a significant bottleneck of <b>speed</b>.
+Because there are no reachable URLs, this meant scraping the data from the screen. This meant using the [Selenium](http://www.seleniumhq.org/) browser automation tool and [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) for extracting, parsing, and working with the HTML source. However, this lends itself to a significant bottleneck of <b>speed</b>.
 
-One of the work arounds to do is using a headless browser for web automation, and in this case, ![PhantomJS](http://phantomjs.org/). Moreover, to counter speed limitations, this API makes use of ![Redis](http://redis.io/). Here's How:
+One of the work arounds to do is using a headless browser for web automation, and in this case, [PhantomJS](http://phantomjs.org/). Moreover, to counter speed limitations, this API makes use of [Redis](http://redis.io/). Here's How:
 
 1) Make request with given parameters
 2) Check if this identical request exists in Redis
@@ -61,7 +61,7 @@ This will install all of the `pip` dependencies for WIN. If you're curious as to
 	selenium==2.45.0
 	wsgiref==0.1.2
 
-Because WIN uses ![PhantomJS](http://phantomjs.org/), you need to install ![Node.js](https://nodejs.org/) along with ![PhantomJS](http://phantomjs.org/).
+Because WIN uses [PhantomJS](http://phantomjs.org/), you need to install [Node.js](https://nodejs.org/) along with [PhantomJS](http://phantomjs.org/).
 
 To install Node.js:
 
@@ -78,14 +78,14 @@ To install Node.js:
 	
 [See here.](http://blueashes.com/2011/web-development/install-nodejs-on-windows/)
 
-Now, using Node's package manager, `npm` run the following to install ![PhantomJS](http://phantomjs.org/):
+Now, using Node's package manager, `npm` run the following to install [PhantomJS](http://phantomjs.org/):
 
 `npm -g install phantomjs`
 
-(<b>NOTE:</b> If you're on a Mac, you can also install ![PhantomJS](http://phantomjs.org/) by doing `brew install phantomjs`)
+(<b>NOTE:</b> If you're on a Mac, you can also install [PhantomJS](http://phantomjs.org/) by doing `brew install phantomjs`)
 
 
-4) You now need to install ![Redis](http://redis.io/).
+4) You now need to install [Redis](http://redis.io/).
 
 <b>Mac OS X</b>:
 
