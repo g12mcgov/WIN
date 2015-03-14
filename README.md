@@ -48,7 +48,7 @@ I <b>strongly</b> suggest creating a virtual environment for WIN:
 
 Then, once you're in the `root` WIN directory, run the following:
 
-3) `sudo python setup.py install`
+3) `$ sudo python setup.py install`
 
 This will install all of the `pip` dependencies for WIN. If you're curious as to what modules it uses, here you go:
 
@@ -69,12 +69,12 @@ To install Node.js:
 
 <b>Mac OS X</b>:
 	
-	brew install node
+	$ brew install node
 
 <b>Linux</b>:
 	
-	sudo apt-get install npm
-	sudo ln -s /usr/bin/nodejs /usr/bin/node
+	$ sudo apt-get install npm
+	$ sudo ln -s /usr/bin/nodejs /usr/bin/node
 
 <b>Windows</b>:
 	
@@ -82,7 +82,7 @@ To install Node.js:
 
 Now, using Node's package manager, `npm` run the following to install [PhantomJS](http://phantomjs.org/):
 
-`npm -g install phantomjs`
+`$ npm -g install phantomjs`
 
 (<b>NOTE:</b> If you're on a Mac, you can also install [PhantomJS](http://phantomjs.org/) by doing `brew install phantomjs`)
 
