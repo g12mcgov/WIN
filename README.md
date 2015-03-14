@@ -173,6 +173,7 @@ Soon, however, additional functionality will be implemented (Class Registration,
 All of the API route (Flask) implementations can be found in the `app.py` file.
 
 
+---
 ### Login
 ---
 
@@ -230,10 +231,11 @@ Checks to see if the user is logged into WIN.
 * **Sample Call:**
 
   ```bash
-    curl -i -H -X "Accept: application/json" http://localhost:5000/wfu
+    curl -i -H -X "Accept: application/json" http://localhost:5000/win
   ```
 
 
+---
 ### Student Directory 
 ---
 
@@ -347,13 +349,13 @@ Or, you can leverage the ID:
 * **Sample Call(s):**
 
   ```bash
-    curl -i -H -X "Accept: application/json" http://localhost:5000/wfu/directory/grant/mcgovern
-    curl -i -H -X "Accept: application/json" http://localhost:5000/wfu/directory/grant/mcgovern/student
-    curl -i -H -X "Accept: application/json" http://localhost:5000/wfu/directory/grant/mcgovern/student/1
+    curl -i -H -X "Accept: application/json" http://localhost:5000/win/directory/grant/mcgovern
+    curl -i -H -X "Accept: application/json" http://localhost:5000/win/directory/grant/mcgovern/student
+    curl -i -H -X "Accept: application/json" http://localhost:5000/win/directory/grant/mcgovern/student/1
 
   ```
 
-
+---
 ### Schedule
 ---
 
@@ -476,7 +478,7 @@ Returns the schedule based on the inputted term for the user logged in.
 * **Sample Call:**
 
   ```bash
-    curl -i -H -X "Accept: application/json" http://localhost:5000/wfu/schedule/Fall%202014
+    curl -i -H -X "Accept: application/json" http://localhost:5000/win/schedule/Fall%202014
   ```
 
 
