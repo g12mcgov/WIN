@@ -105,6 +105,18 @@ Now, using Node's package manager, `npm` run the following to install [PhantomJS
 You can find the latest distribution of Redis [here](https://github.com/rgl/redis/downloads).
 
 
+Before running, you must start Redis:
+
+	$ redis-server 
+
+And you may need to make `app.py` an executable:
+	
+```bash
+	$ chmod a+x app.py
+```
+
+
+
 Configuring
 =======
 
@@ -137,10 +149,12 @@ if __name__ == "__main__":
 
 ```
 
+
 A configuration `shell` script will be added shortly.
 
 
-Documentation
+
+API Documentation
 =======	
 
 Currently, the following WIN attributes are working (though not 100% stable yet):
