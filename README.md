@@ -165,7 +165,7 @@ Checks to see if the user is logged into WIN.
 
 * **URL**
 
-  Base: `/win`
+  `/win`
 
 * **Method:**
   
@@ -271,7 +271,7 @@ Or, you can leverage the ID:
 
 * **URL**
 
-  Base: `/win/directory`
+  `/win/directory`
 
 * **Method:**
   
@@ -348,7 +348,7 @@ Returns the schedule based on the inputted term for the user logged in.
 
 * **URL**
 
-  Base: `/win/schedule`
+  `/win/schedule`
 
 * **Method:**
   
