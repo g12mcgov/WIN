@@ -114,12 +114,18 @@ Before running, you must start Redis:
 
 	$ redis-server 
 
-And you may need to make `app.py` an executable:
+And you need to make `app.py` an executable:
 	
 ```bash
 $ chmod a+x app.py
 ```
 
+
+Now, to start the server, simple run:
+
+```bash
+$ ./app.py
+```
 
 
 Configuring
